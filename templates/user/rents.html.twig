@@ -1,0 +1,157 @@
+{% extends 'dashboard.html.twig' %}
+
+{% block sidebard %}
+    <li class="nav-item">
+        <a class="nav-link" href="{{ path("user_panel") }}">
+            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather feather-home"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path><polyline points="9 22 9 12 15 12 15 22"></polyline></svg>
+            <span class="ml-2">Accueil</span>
+        </a>
+    </li>
+    <li class="nav-item">
+        <a class="nav-link active" aria-current="page" href="{{ path('user_rents') }}">
+            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather feather-file"><path d="M13 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V9z"></path><polyline points="13 2 13 9 20 9"></polyline></svg>
+            <span class="ml-2">Mes Locations</span>
+        </a>
+    </li>
+    <li class="nav-item">
+        <a class="nav-link" href="{{ path('app_logout') }}">
+            <i class="fas fa-sign-out-alt"></i>
+            <span class="ml-2">Déconnexion</span>
+        </a>
+    </li>
+{% endblock %}
+{% block dashboard_current %}
+    <nav aria-label="breadcrumb">
+        <ol class="breadcrumb">
+            <li class="breadcrumb-item"><a href="{{ path('user_panel') }}">Panel</a></li>
+            <li class="breadcrumb-item active" aria-current="page">Mes Locations</li>
+        </ol>
+    </nav>
+{% endblock %}
+{% block dashboard_body %}
+    <h1 class="h2">Mes Locations</h1>
+    <div class="row">
+        <div class="col">
+            <div class="card rounded shadow-sm border-0">
+                <div class="card-body">
+                    {% for message in app.flashes('success') %}
+                        <div class="alert alert-success alert-dismissible fade show" role="alert">
+                            {{ message|raw }}
+                            <button type="button" class="close" data-dismiss="alert" aria-label="Close">
+                                <span aria-hidden="true">&times;</span>
+                            </button>
+                        </div>
+                    {% endfor %}
+                    {% for message in app.flashes('danger') %}
+                        <div class="alert alert-danger alert-dismissible fade show" role="alert">
+                            {{ message|raw }}
+                            <button type="button" class="close" data-dismiss="alert" aria-label="Close">
+                                <span aria-hidden="true">&times;</span>
+                            </button>
+                        </div>
+                    {% endfor %}
+                    <div class="table-responsive">
+                        <table class="table table-hover">
+                            <thead>
+                            <tr>
+                                <th scope="col">#</th>
+                                <th scope="col">Modèle</th> <!-- Idées : https://bootsnipp.com/snippets/Veob -->
+                                <th scope="col">Loueur</th>
+                                <th scope="col">Dates</th>
+                                <th scope="col">Prix</th>
+                                <th scope="col">Status</th>
+                                <th scope="col"></th>
+                            </tr>
+                            </thead>
+                            <tbody>
+                            {% for r in rentals %}
+                                <tr class='clickable-row' data-href='{{ path('user_rent_detail', { 'id': r.getRent.id }) }}' style="cursor: pointer;">
+                                    <th scope="row">{{ r.getRent.id }}</th>
+                                    <td>{{ r.getRent.car.type.name }}</td>
+                                    <td>{{ r.getRent.car.renter.name }}</td>
+                                    <td>{{ r.getRent.startDate|date("d/m/Y") }}
+                                        {% if not r.getRent.isMonthlyRecurring %}
+                                            - {{ r.getRent.endDate|date("d/m/Y") }}<br>{{ r.getRent.duration }} jours
+                                        {% endif %}</td>
+                                    <td>
+                                    {% if r.getRent.isMonthlyRecurring %}
+                                        {{ r.getRent.price }} €/Mois <span class="badge badge-success">Paiement mensuel</span>
+                                    {% else %}
+                                        {{ r.getRent.price }} €
+                                        {% if r.getRent.duration > 29 %}
+                                             ({{ r.getRent.price * 0.9 * 30 }} €/Mois)
+                                        {% endif %}
+                                    {% endif %}
+                                    </td>
+                                    <td>
+                                    {% if r.getRent.isMonthlyRecurring %}
+                                        {% if r.nbPaidMonths == 0 %}
+                                            <span class="badge badge-success">Payée ce mois</span>
+                                            <br>Prochain paiement le <strong>{{ r.nextMonth|date("d/m/Y") }}</strong>
+                                            <br><span><a href="{{ path('user_stopMonthlyRent', { 'id': r.getRent.id }) }}" class="btn btn-sm btn-danger">Stopper la location <i class="fas fa-plus-square"></i></a></span>
+                                        {% else %}
+                                            <h4>
+                                                <a href="{{ path('user_RecurringBilling', {'id': r.getRent.id }) }}" class="badge badge-warning">
+                                                    Payer ce mois<i class="far fa-credit-card"></i>
+                                                </a>
+                                            </h4>
+                                        {% endif %}
+                                    {% else %}
+                                        {% if r.getRent.isPaid %}
+                                            <span class="badge badge-success">Payée</span>
+                                        {% else %}
+                                            {% if r.getRent.duration > 29 %}
+                                                {% if r.nbPaidMonths == 0 %}
+                                                    <span class="badge badge-success">Payée ce mois</span>
+                                                    <h4>
+                                                        <a href="{{ path('user_billing', {'id': r.getRent.id }) }}" class="badge badge-warning">
+                                                            Payer intégralement<i class="far fa-credit-card"></i>
+                                                        </a>
+                                                    </h4>
+                                                {% else %}
+                                                    <h4>
+                                                        <a href="{{ path('user_RecurringBilling', {'id': r.getRent.id }) }}" class="badge badge-warning">
+                                                            Payer ce mois<i class="far fa-credit-card"></i>
+                                                        </a>
+                                                    </h4>
+                                                    <h4>
+                                                        <a href="{{ path('user_billing', {'id': r.getRent.id }) }}" class="badge badge-warning">
+                                                            Payer intégralement<i class="far fa-credit-card"></i>
+                                                        </a>
+                                                    </h4>
+                                                {% endif %}
+                                            {% else %}
+                                                <h4>
+                                                    <a href="{{ path('user_billing', {'id': r.getRent.id }) }}" class="badge badge-warning">
+                                                        Payer<i class="far fa-credit-card"></i>
+                                                    </a>
+                                                </h4>
+                                            {% endif %}
+                                        {% endif %}
+                                    {% endif %}
+                                    </td>
+                                    <td>
+                                        <a href="{{ path('user_rent_detail', { 'id': r.getRent.id }) }}">
+                                            Détails <i class="fas fa-plus-square"></i>
+                                        </a>
+                                    </td>
+                                </tr>
+                            {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+{% endblock %}
+
+{% block panel_scripts %}
+<script>
+    jQuery(document).ready(function($) {
+        $(".clickable-row").click(function() {
+            window.location = $(this).data("href");
+        });
+    });
+</script>
+{% endblock %}

@@ -1,0 +1,211 @@
+{% extends 'base.html.twig' %}
+
+{% block style %}
+    {{ encore_entry_link_tags('dates') }}
+{% endblock %}
+
+{% block body %}
+    <div class="container py-5" xmlns="http://www.w3.org/1999/html">
+        <div class="row pb-5 mb-4">
+            <div class="col">
+                <!-- Card-->
+                <div class="card rounded shadow-sm border-0">
+                    <div class="card-body p-4">
+                        <a class="fa_icon" href="{{ path('index_home') }}">
+                            <span class="fa fa-angle-left"></span>
+                        </a>
+                        <div class='row align-items-center'>
+                            <div class="col-8">
+                                <img src="{{ asset(vich_uploader_asset(type, 'imageFile', 'App\\Entity\\CarType')) }}" class="img-fluid d-block mx-auto mb-3" alt="">
+                            </div>
+                            <div class="col-4">
+                                <h5>{{ type.name }}</h5>
+                                {% if Cars|length > 1 %}
+                                    <p class="small text-muted font-italic"><strong>{{ Cars|length }}</strong> disponibles</p>
+                                {% else %}
+                                    <p class="small text-muted font-italic"><strong>{{ Cars|length }}</strong> disponible</p>
+                                {% endif %}
+                            </div>
+                        </div>
+
+                            <div class="row align-items-center">
+                                    {% if isMonthlyRecurring %}
+                                        <div class="jumbotron w-100">
+                                            <div class="container">
+                                                <h1 class="display-4">Location mensuelle</h1>
+                                                <p class="lead">Un paiement chaque mois, réservé pour vous pour une durée indéterminé, annulable à partir du premier mois! </p>
+                                                {% if savedDates.Start is not empty %}
+                                                    <span>A partir du {{ savedDates.Start }}</span>
+                                                {% endif %}
+                                            </div>
+                                        </div>
+                                    {% else %}
+                                        <div class="jumbotron w-100">
+                                            <div class="container">
+                                                <h1 class="display-5">Location personalisée</h1>
+                                                <p class="lead">Profiter d'une location à des dates précises, qui convient à tous, à partir d'un jour!</p>
+                                                <span>Location du <strong>{{ savedDates.Start }}</strong> au <strong>{{ savedDates.End }}</strong></span>
+                                            </div>
+                                        </div>
+                                    {% endif %}
+                            </div>
+
+                        <div class="container-fluid py-5">
+
+                            {% for message in app.flashes('success') %}
+                                <div class="alert alert-success">
+                                    {{ message|raw }}
+                                </div>
+                            {% endfor %}
+                            {% for message in app.flashes('danger') %}
+                                <div class="alert alert-danger">
+                                    {{ message|raw }}
+                                </div>
+                            {% endfor %}
+
+                            {% for car in Cars %}
+                            <hr>
+                            <div class="row">
+                                <div class="col-md-12">
+                                    <form id="vehicule_{{ car.id }}" action="{{ path('location_louer', {'id': car.id} ) }}" method="post">
+
+                                        <label for="date_{{ car.id }}" hidden></label>
+                                        <input id="date_{{ car.id }}" name="date" class="inputDate" hidden>
+                                        <h3>
+                                            {{ type.name }}
+                                        </h3>
+
+{#                                        <p class="small text-muted">Loueur: <a href="renter.html">{{ car.renter.name }}</a></p>#}
+                                        <div class="row">
+                                            <div class="col-md-4">
+                                                <img class="img-fluid d-block rounded" alt="{{car.image.name}}"
+                                                     src="{{ asset(vich_uploader_asset(car, 'imageFile', 'App\\Entity\\Car')) }}" />
+                                            </div>
+                                            <div class="col-md-4">
+                                                <dl>
+                                                    {% for key, descr in car.features %}
+                                                        <dt>
+                                                            {{ key }}
+                                                        </dt>
+                                                        <dd>
+                                                            {{ descr }}
+                                                        </dd>
+                                                        <br />
+                                                    {% endfor %}
+                                                </dl>
+                                            </div>
+                                            <div class="col-md-4">
+                                                {% if isMonthlyRecurring %}
+                                                    <h3 class="text-center">{{ car.price * 0.9 * 30}} €/mois</h3>
+                                                    <small class="float-right" style="color:orangered"><small style="color:black;text-decoration: line-through;">{{ car.price }}</small> <strong>{{ car.price * 0.9 }}</strong> €/jours -10%</small>
+                                                {% elseif days >= 30 %}
+                                                    <h3 class="text-center">{{ car.price * 0.9 * days }} €</h3>
+                                                    <small class="float-right" style="color:orangered"><small style="color:black;text-decoration: line-through;">{{ car.price }}</small> <strong>{{ car.price * 0.9 }}</strong> €/jours -10%</small>
+                                                {% else %}
+                                                    <h3 class="text-center">{{ car.price * days }} €</h3>
+                                                    <small class="float-right">{{ car.price }} €/jours</small>
+                                                {% endif %}
+
+                                                {% if is_granted('ROLE_USER') %}
+                                                    <button type="button" class="validateLocation btn btn-main btn-outline-primary m-2 px-2" data-toggle="modal" data-target="#M_{{ car.id }}">
+                                                        Réserver Maintenant
+                                                    </button>
+                                                {% else %}
+                                                    <button type="button" class="validateLocation btn btn-main btn-outline-primary m-2 px-2" data-toggle="modal" data-target="#needLogin">
+                                                        Réserver Maintenant
+                                                    </button>
+                                                {% endif %}
+
+                                                <!-- Confirmation -->
+                                                <div class="modal fade" id="M_{{ car.id }}" tabindex="-1" role="dialog" aria-labelledby="BuyM_{{ car.id }}" aria-hidden="true">
+                                                    <div class="modal-dialog" role="document">
+                                                        <div class="modal-content">
+                                                            <div class="modal-header">
+                                                                <h5 class="modal-title" id="BuyM_{{ car.id }}">Confirmation de location</h5>
+                                                                <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                                                                    <span aria-hidden="true">&times;</span>
+                                                                </button>
+                                                            </div>
+                                                            <div class="modal-body">
+                                                                Ce véhicule vous sera facturé
+                                                                {% if isMonthlyRecurring %}
+                                                                    <strong>{{ car.price * 0.9 * 30}}€/mois</strong>
+                                                                     à partir
+                                                                    {% if savedDates.Start is empty %}
+                                                                        d'aujourd'hui
+                                                                    {% else %}
+                                                                        du {{ savedDates.Start }}
+
+                                                                    {% endif %}
+                                                                {% elseif days >= 30 %}
+                                                                    <strong>{{ car.price * 0.9 * days }} €</strong> du
+                                                                    {{ savedDates.Start }} au {{ savedDates.End }}
+                                                                {% else %}
+                                                                    <strong>{{ car.price * days }} €</strong> du
+                                                                    {{ savedDates.Start }} au {{ savedDates.End }}
+                                                                {% endif %}
+                                                            </div>
+                                                            <div class="modal-footer">
+                                                                <button type="button" class="btn btn-outline-secondary" data-dismiss="modal">Annuler</button>
+                                                                <input type="submit" class="btn btn-primary validateLocation" value="Confirmer">
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </form>
+                                </div>
+                            </div>
+                            {% endfor %}
+                            <div class="modal fade" id="needLogin" tabindex="-1" role="dialog" aria-labelledby="NeedLoginLabel" aria-hidden="true">
+                                <div class="modal-dialog" role="document">
+                                    <div class="modal-content">
+                                        <div class="modal-header">
+                                            <h5 class="modal-title" id="NeedLoginLabel">Veuillez vous connecter</h5>
+                                            <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                                                <span aria-hidden="true">&times;</span>
+                                            </button>
+                                        </div>
+                                        <div class="modal-body">
+                                            La réservation d'un véhicule nécessite un compte utilisateur.
+                                        </div>
+                                        <input name="hiddenDate" class="currentDate" type="hidden" hidden>
+                                        <div class="modal-footer">
+                                            <button type="button" class="btn btn-outline-secondary" data-dismiss="modal">Annuler</button>
+                                            <a href="{{ path('app_login') }}" class="btn btn-primary">Connexion/Inscription</a>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    {% block javascripts %}
+        {{ encore_entry_script_tags('dates') }}
+        <script>
+            $(document).ready(function () {
+
+                {% if savedDates.Start is not empty and savedDates.End is not empty%}
+                    $('.currentDate').val("{{ savedDates.Start }}" + " - " + "{{ savedDates.End }}");
+                {% endif %}
+
+                //permet de mettre à jour les dates pour les envoyer automatiquement
+                $(document).ready(function () {
+                    $('.validateLocation').on('mouseover', function () {
+                        var textDate = $('.currentDate').val();
+                        $('.inputDate').each(function (index) {
+                            $(this).val(textDate);
+                        });
+                    });
+                });
+
+            });
+        </script>
+    {% endblock %}
+{% endblock %}

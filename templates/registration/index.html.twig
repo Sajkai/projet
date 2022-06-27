@@ -1,0 +1,14 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}Inscription{% endblock %}
+
+{% block body %}
+<div class="container py-5">
+    {% if app.user %}
+        <div class="alert alert-warning alert-dismissible fade show" role="alert">
+            <strong>Vous êtes connecté(e)!</strong> Bonjour {{ app.user.username }}, <a href="{{ path('app_logout') }}">Se déconnecter</a>
+        </div>
+    {% endif %}
+    {{ form(form) }}
+</div>
+{% endblock %}

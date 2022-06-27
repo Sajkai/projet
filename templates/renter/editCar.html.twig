@@ -1,0 +1,165 @@
+{% extends 'renter/index.html.twig' %}
+
+{% block dashboard_current %}
+    <nav aria-label="breadcrumb">
+        <ol class="breadcrumb">
+            <li class="breadcrumb-item"><a href="{{ path('renter_panel') }}">Panel</a></li>
+            <li class="breadcrumb-item"><a href="{{ path('renter_cars') }}">Véhicules</a></li>
+            <li class="breadcrumb-item active" aria-current="page">Modifier</li>
+        </ol>
+    </nav>
+{% endblock %}
+
+{% block dashboard_body %}
+    <h1 class="h2">Modification du véhicule</h1>
+    <div class="row justify-content-center">
+        <div class="col-10">
+            <div class="card rounded shadow-sm border-0 mr-2">
+                <div class="card-body">
+                    <a class="fa_icon" href="{{ path('renter_cars') }}" >
+                        <span class="fa fa-angle-left"></span>
+                    </a>
+                    {{ form_start(form) }}
+
+                    <div class="my-custom-class-for-errors">
+                        {{ form_errors(form) }}
+                    </div>
+
+                    <div class="form-row">
+                        <div class="col">
+                            {{ form_row(form.type) }}
+                            <a href="{{ path('renter_editType', {'id': car.type.id}) }}">Modifier <i class="fas fa-edit"></i></a>
+                        </div>
+                    </div>
+                    <div class="form-row">
+                        <div class="col">
+                            {{ form_row(form.price) }}
+                        </div>
+                    </div>
+                    <div class="form-row">
+                        <div class="col">
+                            <p>
+                                <a class="btn btn-secondary" data-toggle="collapse" href="#Prixcollapse" role="button" aria-expanded="false" aria-controls="Prixcollapse">
+                                    Estimation des revenus
+                                </a>
+                            </p>
+                            <div class="collapse" id="Prixcollapse">
+                                <div class="card card-body">
+                                    <p>1 semaine : <span id="1semaine"></span></p>
+                                    <p>1 mois : <span id="1mois"></span></p>
+                                    <p>1 an: <span id="1an"></span></p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="form-row">
+                        <div class="col">
+                            {{ form_row(form.boite) }}
+                        </div>
+                    </div>
+                    <div class="form-row">
+                        <div class="col">
+                            {{ form_row(form.moteur) }}
+                        </div>
+                    </div>
+                    <div class="form-row">
+                        <div class="col">
+                            {{ form_row(form.carburant) }}
+                        </div>
+                    </div>
+                    <div class="form-row">
+                        <div class="col">
+                            <div class="text-center">
+                                <div class="form-group">
+                                    <label>Photo du véhicule</label>
+
+                                    {{ form_widget(form.imageFile) }}
+
+                                    <small>{{ form_help(form.imageFile) }}</small>
+
+                                    <div class="form-error">
+                                        {{ form_errors(form.imageFile) }}
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="form-row">
+                        <div class="col">
+                            <div class="text-center">
+                                {{ form_row(form.save, {'label': 'Confirmer les modifications'}) }}
+                                {{ form_row(form.available, {'label': 'Disponible à la location'}) }}
+                            </div>
+                            <div class="text-center">
+                                <button type="button" class="btn btn-outline-danger" data-toggle="modal" data-target="#deleteModal">
+                                    Retirer le véhicule
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="modal fade" id="deleteModal" tabindex="-1" role="dialog" aria-labelledby="deleteModalLabel" aria-hidden="true">
+                        <div class="modal-dialog" role="document">
+                            <div class="modal-content">
+                                <div class="modal-header">
+                                    <h5 class="modal-title" id="exampleModalLabel">Confirmation</h5>
+                                    <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                                        <span aria-hidden="true">&times;</span>
+                                    </button>
+                                </div>
+                                <div class="modal-body">
+                                    Le véhicule sera définitivement supprimé et ne pourra plus être mis en location
+                                </div>
+                                <div class="modal-footer">
+                                    <button type="button" class="btn btn-outline-secondary" data-dismiss="modal">Annuler</button>
+                                    <a href="{{ path('renter_deleteCar', {'id': car.id}) }}" class="btn btn-danger">Supprimer</a>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                {{ form_end(form) }}
+
+            </div>
+        </div>
+    </div>
+    </div>
+{% endblock %}
+{% block panel_scripts %}
+    {{ encore_entry_script_tags('form') }}
+    <script>
+        $(".numberpicker").val({{ car.price }});
+        var $inputPrix = $(".numberpicker");
+        var $1semaine = $("#1semaine");
+        var $1mois = $("#1mois");
+        var $1an = $("#1an");
+        $inputPrix.on("input", function (event) {
+            $1semaine.html(($inputPrix.val() * 7).toFixed(2) + " €");
+            $1mois.html(($inputPrix.val() * 7 * 4 * 0.9).toFixed(2) + " €");
+            $1an.html(($inputPrix.val() * 7 * 4 * 12 * 0.9).toFixed(2) + " €");
+        })
+
+        var checkExist = setInterval(function() {
+            if ($('.no-results').length) {
+                var ajoutMod = document.querySelector('.no-results');
+                ajoutMod.addEventListener('click', function() {
+                    // AJOUT MODELE
+                    searchValue = document.querySelector('.bs-searchbox input').value;
+                    var form = document.createElement('form');
+                    document.body.appendChild(form);
+                    form.method = 'post';
+                    form.action = "{{ path('renter_addType')|escape('js') }}";
+                    var input = document.createElement('input');
+                    input.type = 'hidden';
+                    input.name = 'default_name';
+                    input.value = searchValue;
+                    form.appendChild(input);
+                    form.submit();
+                });
+                clearInterval(checkExist);
+            }
+        }, 100); // check every 100ms
+
+    </script>
+{% endblock %}
+

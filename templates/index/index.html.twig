@@ -1,0 +1,176 @@
+{% extends 'base.html.twig' %}
+
+{% block style %}
+    {% if isMonthlyRecurring %}
+        {{ encore_entry_link_tags('date') }}
+    {% else %}
+        {{ encore_entry_link_tags('dates') }}
+    {% endif %}
+{% endblock %}
+
+{% block body %}
+    <div class="container py-5">
+        <div class="text-center mb-5">
+            <h1 class="display-4 font-weight-bold">Location Voiture</h1>
+            {% if types|length > 1 %}
+            <p class="font-italic text-muted mb-0">Choisissez parmis nos <strong>{{ types|length }}</strong>
+                modèles</p>
+            {% endif %}
+            <br />
+            {{ form_start(form) }}
+            <div class="my-custom-class-for-errors">
+                {{ form_errors(form) }}
+            </div>
+            <div class="row justify-content-md-center">
+                <div class="col-6">
+                    {% if isMonthlyRecurring %}
+                        {{ form_row(form.date, {'label': 'Choisissez la date de début de location :'}) }}
+                    {% else %}
+                        {{ form_row(form.date, {'label': 'Choisissez vos dates de location :'}) }}
+                    {% endif %}
+                </div>
+            </div>
+            {{ form_rest(form) }}
+            <div class="row justify-content-md-center my-3">
+                <div class="col-3">
+                    {% if isMonthlyRecurring %}
+                        <a href="{{ path('index_date_init') }}" class="btn btn-warning">Location à des dates précises</a>
+                    {% else %}
+                        <a href="{{ path('index_date_reset') }}" class="btn btn-info">Location mensuelle</a>
+                    {% endif %}
+                </div>
+                <div class="col-3">
+                    <button class="btn btn-primary" type="submit">
+                        Valider {% if isMonthlyRecurring %}la date{% else %}les dates{% endif %} <span class='fa fa-calendar-alt'></span>
+                    </button>
+                </div>
+            </div>
+            <div class="row justify-content-center">
+                <div class="col-6">
+                    {% for message in app.flashes('success') %}
+                        <div class="alert alert-success alert-dismissible fade show" role="alert">
+                            {{ message|raw }}
+                            <button type="button" class="close" data-dismiss="alert" aria-label="Close">
+                                <span aria-hidden="true">&times;</span>
+                            </button>
+                        </div>
+                    {% endfor %}
+                    {% for message in app.flashes('danger') %}
+                        <div class="alert alert-danger alert-dismissible fade show" role="alert">
+                            {{ message|raw }}
+                            <button type="button" class="close" data-dismiss="alert" aria-label="Close">
+                                <span aria-hidden="true">&times;</span>
+                            </button>
+                        </div>
+                    {% endfor %}
+                    {% for message in app.flashes('info') %}
+                        <div class="alert alert-info alert-dismissible fade show" role="alert">
+                            {{ message|raw }}
+                            <button type="button" class="close" data-dismiss="alert" aria-label="Close">
+                                <span aria-hidden="true">&times;</span>
+                            </button>
+                        </div>
+                    {% endfor %}
+                    {% for message in app.flashes('warning') %}
+                        <div class="alert alert-warning alert-dismissible fade show" role="alert">
+                            {{ message|raw }}
+                            <button type="button" class="close" data-dismiss="alert" aria-label="Close">
+                                <span aria-hidden="true">&times;</span>
+                            </button>
+                        </div>
+                    {% endfor %}
+                </div>
+            </div>
+            {{ form_end(form) }}
+        </div>
+
+        <div class="row pb-5 mb-4" id="grid-types">
+
+            {% if types|length > 0 %}
+                {% for type in types|slice(0+(8*(page-1)),8+(8*(page-1))) %}
+                <div class="col-lg-3 col-md-6 mb-4">
+                    <!-- Card-->
+                    <div class="card rounded shadow-sm border-0">
+                        <a href="{{ path('index_type', {id: type.id})}}" class="text-dark">
+                            <div class="card-body p-4">
+                                <img src="{{ asset(vich_uploader_asset(type, 'imageFile', 'App\\Entity\\CarType')) }}"
+                                     alt="{{ type.image.name }}" class="img-fluid d-block mx-auto mb-3">
+                                <h3>
+                                    {{ type.name }}
+                                </h3>
+                                {% set minimalPrice = 10000 %}
+                                {% for v in type.Cars %}
+                                    {% if v.price < minimalPrice%}
+                                        {% set minimalPrice = v.price %}
+                                    {% endif %}
+                                {% endfor %}
+                                <p class="small font-bold float-right">À partir de
+                                    {% if isMonthlyRecurring %}{{ minimalPrice * 0.9 * 30 }} €/mois{% else %}{{ minimalPrice }} €/jour{% endif %}</p>
+                            </div>
+                        </a>
+                    </div>
+                </div>
+                {% endfor %}
+            {% else %}
+            <div class="jumbotron jumbotron-fluid w-100">
+                <div class="container">
+                    <h1 class="display-4">Oops !</h1>
+                    <p class="lead">Aucune voiture disponible ! Des dates différentes peuvent donner de nouveaux résultats!</p>
+                </div>
+            </div>
+            {% endif %}
+
+            {% if types|length > 8 %}
+            <nav class="col-12">
+                <ul class="pagination justify-content-center">
+                    {% if page != 1 %}
+                    <li class="page-item">
+                        <a class="page-link" href="{{ path('index_home', {'page': page-1}) }}" aria-label="Previous">
+                            <span aria-hidden="true">&laquo;</span>
+                            <span class="sr-only">Précédent</span>
+                        </a>
+                    </li>
+                    {% endif %}
+                    {% for i in 1..nbPages %}
+                        {% if i == page %}
+                            <li class="page-item disabled"><a class="page-link disabled" href="#">{{ i }}</a></li>
+                        {% else %}
+                            <li class="page-item"><a class="page-link" href="{{ path('index_home', {'page': i}) }}">{{ i }}</a></li>
+                        {% endif %}
+                    {% endfor %}
+                    {% if page != nbPages %}
+                    <li class="page-item">
+                        <a class="page-link" href="{{ path('index_home', {'page': page+1}) }}" aria-label="Next">
+                            <span aria-hidden="true">&raquo;</span>
+                            <span class="sr-only">Suivant</span>
+                        </a>
+                    </li>
+                    {% endif %}
+                </ul>
+            </nav>
+            {% endif %}
+        </div>
+    </div>
+{% endblock %}
+{% block javascripts %}
+    {% if isMonthlyRecurring %}
+        {{ encore_entry_script_tags('date') }}
+    {% else %}
+        {{ encore_entry_script_tags('dates') }}
+    {% endif %}
+<script>
+    $(document).ready(function () {
+        {% if isMonthlyRecurring %}
+
+        picker.setDate("{{ savedDates.Start }}");
+
+        {% else %}
+
+            {% if savedDates.Start is not empty and savedDates.End is not empty%}
+            picker.setDateRange("{{ savedDates.Start }}", "{{ savedDates.End }}");
+            {% endif %}
+
+        {% endif %}
+    });
+</script>
+{% endblock %}
